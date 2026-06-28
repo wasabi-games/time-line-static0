@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>プロレス大河タイムライン</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #1a0e00 0%, #1a1200 100%); padding: 20px 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #2d2010; }
+  header h1 { font-size: 1.3rem; font-weight: 900; color: #f6ad55; flex: 1; letter-spacing: 0.04em; }
+  #data-meta { font-size: 0.72rem; color: #4a5568; }
+  #controls { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 24px; background: #13100a; border-bottom: 1px solid #2d2010; justify-content: center; }
+  .filter-btn { padding: 5px 16px; border-radius: 20px; border: 2px solid transparent; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; background: #1e1810; color: #a0aec0; }
+  .filter-btn:hover { background: #2d2418; color: #e2e8f0; }
+  .filter-btn.active { color: #fff; }
+  #main { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; position: relative; }
+  #main::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, transparent, #2d2010 60px, #2d2010 calc(100% - 60px), transparent); transform: translateX(-50%); }
+  .year-label { text-align: center; position: relative; z-index: 2; margin: 32px 0 8px; }
+  .year-label span { display: inline-block; background: #1a1200; border: 1px solid #4a3a20; padding: 4px 16px; border-radius: 12px; font-size: 0.8rem; color: #a07840; font-weight: 700; letter-spacing: 0.08em; }
+  .event-row { display: flex; align-items: flex-start; margin: 20px 0; position: relative; }
+  .event-row.left  { flex-direction: row-reverse; }
+  .event-row.right { flex-direction: row; }
+  .event-card { width: calc(50% - 40px); background: #1a1410; border: 1px solid #2d2010; border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all 0.2s; position: relative; }
+  .event-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .event-row.right .event-card::before { content: ''; position: absolute; right: -10px; top: 16px; border: 5px solid transparent; border-left-color: #2d2010; }
+  .event-row.left  .event-card::before { content: ''; position: absolute; left: -10px; top: 16px; border: 5px solid transparent; border-right-color: #2d2010; }
+  .event-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent, #f6ad55); border: 3px solid #0f1117; position: absolute; left: 50%; top: 18px; transform: translateX(-50%); z-index: 3; }
+  .event-dot.range { border-radius: 4px; }
+  .card-group { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .card-title { font-size: 1rem; font-weight: 700; color: #e2e8f0; line-height: 1.4; }
+  .card-date  { font-size: 0.78rem; color: #718096; margin-top: 4px; }
+  .card-detail { font-size: 0.82rem; color: #a0aec0; margin-top: 8px; line-height: 1.6; display: none; border-top: 1px solid #2d2010; padding-top: 8px; }
+  .event-card.open .card-detail { display: block; }
+  .card-img { width: 100%; border-radius: 8px; margin-top: 8px; max-height: 180px; object-fit: cover; display: none; }
+  .event-card.open .card-img { display: block; }
+  a.card-link { display: inline-block; margin-top: 8px; font-size: 0.78rem; color: #f6ad55; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+  a.card-link:hover { border-color: #f6ad55; }
+  @media (max-width: 600px) {
+    #main::before { left: 20px; }
+    .event-row { flex-direction: column !important; padding-left: 44px; }
+    .event-card { width: 100%; }
+    .event-dot { left: 20px; }
+    .event-row.right .event-card::before, .event-row.left .event-card::before { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>プロレス大河タイムライン</h1>
+  <span id="data-meta">データ取得: 2026/6/29 1:04</span>
+</header>
+<div id="controls"></div>
+<div id="main"></div>
+<script>
+const ROWS = [{"Group":"日本の年号","Year":"2019","Month":"5","Day":"1","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"令和","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"日本の年号","Year":"1989","Month":"1","Day":"8","Time":"","End Year":"2019","End Month":"4","End Day":"30","End Time":"","Display Date":"","Title":"平成","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"日本の年号","Year":"1926","Month":"12","Day":"25","Time":"","End Year":"1988","End Month":"1","End Day":"7","End Time":"","Display Date":"","Title":"昭和","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"日本の年号","Year":"1912","Month":"7","Day":"30","Time":"","End Year":"1926","End Month":"12","End Day":"24","End Time":"","Display Date":"","Title":"大正","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"日本の年号","Year":"1868","Month":"1","Day":"1","Time":"","End Year":"1912","End Month":"7","End Day":"29","End Time":"","Display Date":"","Title":"明治","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"日本の年号","Year":"1588","Month":"1","Day":"1","Time":"","End Year":"1867","End Month":"12","End Day":"31","End Time":"","Display Date":"","Title":"江戸","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1962","Month":"4","Day":"12","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"高田","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1963","Month":"6","Day":"4","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"宮戸","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1963","Month":"8","Day":"12","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"北尾","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1943","Month":"2","Day":"20","Time":"","End Year":"2022","End Month":"10","End Day":"1","End Time":"","Display Date":"","Title":"アントニオ猪木","Detail":"＠神奈川県横浜市","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1964","Month":"11","Day":"10","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"山田（ライガー）","Detail":"＠広島県広島市","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1969","Month":"3","Day":"13","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"船木","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1956","Month":"1","Day":"11","Time":"","End Year":"2024","End Month":"9","End Day":"9","End Time":"","Display Date":"","Title":"小林邦明","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1975","Month":"12","Day":"11","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"猪木VSビルロビンソン","Detail":"＠東京・蔵前国技館。TV放映は録画で翌日の12/12。","URL":"","Image URL":"http://www.westatic.com/img/dict/dkijt/guericke_test2.jpg","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1978","Month":"","Day":"","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"15歳のM少年が道場訪問","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1978","Month":"","Day":"","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"15歳のK少年が三重で猪木にスカウトされる","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1979","Month":"","Day":"","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"K少年、初土俵","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1981","Month":"4","Day":"23","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"タイガーマスク初登場＠蔵前","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"2024","Month":"9","Day":"9","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"小林邦明、逝去","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"2022","Month":"10","Day":"1","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"猪木、逝去","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1959","Month":"1","Day":"24","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"前田日明","Detail":"＠大阪府大阪市大正区","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1957","Month":"11","Day":"27","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"佐山聡","Detail":"＠下関","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1977","Month":"","Day":"","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"前田、上京","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1978","Month":"8","Day":"25","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"前田デビュー戦 VS山本小鉄","Detail":"＠新潟県長岡","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1984","Month":"4","Day":"11","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"船木、入門","Detail":"","URL":"https://www.youtube.com/watch?v=YpBjSTRbgas","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1985","Month":"3","Day":"3","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"船木デビュー戦 VS後藤達俊","Detail":"15歳11か月　＠茨城県北茨木市民体育館","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1985","Month":"9","Day":"6","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"宮戸デビュー戦 VS星名治","Detail":"＠後楽園ホール","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1985","Month":"9","Day":"2","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"佐山VS前田　例の試合","Detail":"＠大阪・臨海スポーツセンター","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1986","Month":"9","Day":"","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"北尾、横綱・双羽黒に。","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1987","Month":"12","Day":"31","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"双羽黒、廃業","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1984","Month":"4","Day":"11","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"第一次UWF旗揚げ戦＠大宮スケートセンター","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"1985","Month":"9","Day":"11","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"第一次UWF最終戦＠後楽園ホール","Detail":"","URL":"https://www.youtube.com/watch?v=6BsmF26Guuo","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"2019","Month":"2","Day":"10","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"北尾、逝去","Detail":"","URL":"https://www.youtube.com/watch?v=xN4tEXVu41c","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"出来事","Year":"2014","Month":"3","Day":"3","Time":"","End Year":"","End Month":"","End Day":"","End Time":"","Display Date":"","Title":"ビル・ロビンソン、逝去","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""},{"Group":"人物","Year":"1938","Month":"9","Day":"18","Time":"","End Year":"2014","End Month":"3","End Day":"3","End Time":"","Display Date":"","Title":"ビル・ロビンソン","Detail":"","URL":"","Image URL":"","Image Credit":"","Type":"","Color":""}];
+const GROUP_COLORS = {};
+const PALETTE = ['#f6ad55','#68d391','#63b3ed','#b794f4','#fc8181','#76e4f7','#fbd38d'];
+let colorIdx = 0;
+function groupColor(g) { if (!GROUP_COLORS[g]) GROUP_COLORS[g] = PALETTE[colorIdx++ % PALETTE.length]; return GROUP_COLORS[g]; }
+function toYear(r) { return parseInt(r.Year) || 0; }
+function toEndYear(r) { return parseInt(r['End Year']) || null; }
+function toSortKey(r) { return (parseInt(r.Year)||0)*10000 + (parseInt(r.Month)||0)*100 + (parseInt(r.Day)||0); }
+function formatDate(r, p) { p=p||''; const y=r[p+'Year'],m=r[p+'Month'],d=r[p+'Day']; if(!y)return''; return y+'年'+(m?m+'月':'')+(d?d+'日':''); }
+function buildTimeline(rows, filter) {
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  const visible = (filter === 'ALL' ? rows : rows.filter(r => r.Group === filter)).slice().sort((a,b) => toSortKey(a)-toSortKey(b));
+  if (!visible.length) { main.innerHTML = '<p style="text-align:center;color:#718096;padding:40px">データがありません</p>'; return; }
+  let lastDecade = null, side = 0;
+  visible.forEach(row => {
+    const decade = Math.floor(toYear(row)/10)*10;
+    const accent = groupColor(row.Group);
+    if (decade !== lastDecade) { lastDecade=decade; const l=document.createElement('div'); l.className='year-label'; l.innerHTML='<span>'+decade+'年代</span>'; main.appendChild(l); }
+    const rowEl = document.createElement('div');
+    rowEl.className = 'event-row '+(side++%2===0?'right':'left');
+    rowEl.style.setProperty('--accent', accent);
+    const dot = document.createElement('div');
+    dot.className = 'event-dot'+(toEndYear(row)?' range':'');
+    dot.style.background = accent;
+    rowEl.appendChild(dot);
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.style.setProperty('--accent', accent);
+    const sd = row['Display Date'] || formatDate(row,'');
+    const ed = toEndYear(row) ? formatDate(row,'End ') : '';
+    const lk = row.URL ? '<a class="card-link" href="'+row.URL+'" target="_blank" rel="noopener">詳細を見る →</a>' : '';
+    const im = row['Image URL'] ? '<img class="card-img" src="'+row['Image URL']+'" alt="'+row.Title+'" loading="lazy">' : '';
+    card.innerHTML = '<div class="card-group">'+row.Group+'</div><div class="card-title">'+row.Title+'</div><div class="card-date">'+(ed?sd+' ～ '+ed:sd)+'</div>'+((row.Detail||lk||im)?'<div class="card-detail">'+(row.Detail?'<p>'+row.Detail+'</p>':'')+lk+im+'</div>':'');
+    card.addEventListener('click', () => { if (card.querySelector('.card-detail')) card.classList.toggle('open'); });
+    rowEl.appendChild(card);
+    main.appendChild(rowEl);
+  });
+}
+function buildControls(rows) {
+  const ctrl = document.getElementById('controls');
+  const groups = ['ALL', ...new Set(rows.map(r => r.Group))];
+  let active = 'ALL';
+  groups.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn'+(g==='ALL'?' active':'');
+    btn.textContent = g==='ALL'?'すべて':g;
+    const color = g==='ALL'?'#e2e8f0':groupColor(g);
+    btn.style.borderColor = g==='ALL'?'#4a3a20':color;
+    btn.style.color = color;
+    btn.addEventListener('click', () => { ctrl.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); active=g; buildTimeline(rows,active); });
+    ctrl.appendChild(btn);
+  });
+}
+buildControls(ROWS);
+buildTimeline(ROWS, 'ALL');
+</script>
+</body>
+</html>
